@@ -1,0 +1,39 @@
+# 美霖个人助手 - Python依赖包
+
+# Web框架
+streamlit==1.28.1
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# HTTP请求
+requests==2.31.0
+
+# 日期时间处理
+# 标准库，无需额外安装
+
+# 数据序列化
+# json - 标准库
+
+# 随机数生成
+# random - 标准库
+
+# 网络请求
+# socket - 标准库
+
+# Vercel部署所需
+# 以下包确保在Vercel环境正常工作
+
+# 可选：日志记录
+# 使用标准库logging
+
+# 可选：缓存
+# 使用标准库functools.lru_cache
+
+# 开发依赖（本地开发使用）
+# black==23.11.0
+# flake8==6.1.0
+# pytest==7.4.3
+
+# 注意：保持依赖精简，避免部署问题
+# Vercel对包大小和安装时间有限制
