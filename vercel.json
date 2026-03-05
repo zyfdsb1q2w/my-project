@@ -2,11 +2,11 @@
   "builds": [
     {
       "src": "app.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "requirements.txt",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 10,
+        "pythonVersion": "3.9"
+      }
     }
   ],
   "routes": [
@@ -18,7 +18,12 @@
       "src": "/manifest.json",
       "headers": {
         "Content-Type": "application/manifest+json",
-        "Cache-Control": "public, max-age=86400"
+        "Cache-Control": "public, max-age=86400",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
       }
     },
     {
@@ -26,83 +31,35 @@
       "headers": {
         "Content-Type": "application/javascript",
         "Cache-Control": "public, max-age=86400",
-        "Service-Worker-Allowed": "/"
+        "Service-Worker-Allowed": "/",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
       }
     },
     {
       "src": "/icons/(.*)",
       "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
       }
     },
     {
       "src": "/(.*\\.(png|jpg|jpeg|gif|ico|svg|css|js|woff|woff2|ttf|eot))",
       "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
       }
-    }
-  ],
-  "env": {
-    "PYTHON_VERSION": "3.9"
-  },
-  "functions": {
-    "app.py": {
-      "maxDuration": 10
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
-        }
-      ]
-    },
-    {
-      "source": "/manifest.json",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/manifest+json"
-        }
-      ]
-    },
-    {
-      "source": "/service-worker.js",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        }
-      ]
     }
   ],
   "regions": ["hkg1"],
