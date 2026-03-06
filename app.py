@@ -5,8 +5,19 @@ import streamlit as st
 from dotenv import load_dotenv
 from datetime import date
 
-# 加载API密钥（从.env文件读取）
-load_dotenv()
+# 加载API密钥（优先从Streamlit Secrets读取，其次从.env文件读取）
+# Streamlit社区云使用Secrets，本地开发使用.env文件
+try:
+    # 尝试从Streamlit Secrets读取
+    api_key = st.secrets.get("DEEPSEEK_API_KEY")
+    if api_key and api_key != "your_deepseek_api_key_here":
+        os.environ["DEEPSEEK_API_KEY"] = api_key
+    else:
+        # 如果Secrets中没有或为默认值，尝试从.env文件读取
+        load_dotenv()
+except:
+    # 如果Secrets不可用（本地运行），使用.env文件
+    load_dotenv()
 
 # 页面基础配置（手机端适配）
 st.set_page_config(
@@ -45,11 +56,25 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <style>
+/* 全局样式优化 */
+* {
+    box-sizing: border-box;
+}
+
 /* 移动端优化 */
 @media (max-width: 768px) {
     /* 调整标题大小 */
     h1 {
         font-size: 1.8rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem !important;
+    }
+    
+    h3 {
+        font-size: 1.3rem !important;
     }
     
     /* 调整卡片内边距 */
@@ -62,55 +87,209 @@ if ('serviceWorker' in navigator) {
     .stButton > button {
         width: 100% !important;
         margin: 5px 0 !important;
-        padding: 12px !important;
+        padding: 14px !important;
         font-size: 16px !important;
+        border-radius: 10px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
     }
     
     /* 调整输入框大小 */
     .stTextArea textarea, .stTextInput input {
         font-size: 16px !important;
-        padding: 12px !important;
+        padding: 14px !important;
+        border-radius: 10px !important;
+        border: 2px solid #e0e0e0 !important;
+        transition: border-color 0.3s ease !important;
+    }
+    
+    .stTextArea textarea:focus, .stTextInput input:focus {
+        border-color: #4A86E8 !important;
+        box-shadow: 0 0 0 3px rgba(74, 134, 232, 0.1) !important;
     }
     
     /* 调整选择框大小 */
     .stSelectbox select {
         font-size: 16px !important;
-        padding: 12px !important;
+        padding: 14px !important;
+        border-radius: 10px !important;
     }
     
     /* 调整聊天消息 */
     .stChatMessage {
-        padding: 10px !important;
-        margin: 8px 0 !important;
+        padding: 12px !important;
+        margin: 10px 0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
     }
     
     /* 隐藏不必要的列 */
     .mobile-hide {
         display: none !important;
     }
+    
+    /* 卡片间距优化 */
+    .element-container {
+        margin-bottom: 20px !important;
+    }
 }
 
 /* 通用优化 */
 .welcome-card {
-    background-color: #f0f8ff;
-    padding: 20px;
-    border-radius: 10px;
-    border-left: 5px solid #4A86E8;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 25px;
+    border-radius: 16px;
     margin: 20px 0;
+    color: white;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* 触摸友好的按钮 */
 .touch-button {
-    min-height: 44px !important;
-    min-width: 44px !important;
+    min-height: 48px !important;
+    min-width: 48px !important;
+    border-radius: 12px !important;
 }
 
 /* 移动端侧边栏优化 */
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
         width: 85% !important;
-        max-width: 300px !important;
+        max-width: 320px !important;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
     }
+}
+
+/* 卡片样式优化 */
+.stCard {
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.stCard:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+}
+
+/* 聊天消息样式 */
+.user-message {
+    background: linear-gradient(135deg, #4A86E8 0%, #3B6BB5 100%) !important;
+    color: white !important;
+    border-radius: 18px 18px 4px 18px !important;
+}
+
+.assistant-message {
+    background: linear-gradient(135deg, #f0f8ff 0%, #e3f2fd 100%) !important;
+    color: #333 !important;
+    border-radius: 18px 18px 18px 4px !important;
+}
+
+/* 渐变按钮 */
+.gradient-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 14px 24px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.gradient-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* 美化滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a3f9c 100%);
+}
+
+/* 加载动画 */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 响应式网格 */
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+/* 美化分隔线 */
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4A86E8, transparent);
+    margin: 30px 0;
+}
+
+/* 美化输入框组 */
+.input-group {
+    position: relative;
+    margin: 20px 0;
+}
+
+.input-group input, .input-group textarea {
+    width: 100%;
+    padding: 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus, .input-group textarea:focus {
+    border-color: #4A86E8;
+    box-shadow: 0 0 0 3px rgba(74, 134, 232, 0.1);
+    outline: none;
+}
+
+/* 美化标签 */
+.fancy-label {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -493,17 +672,59 @@ with chat_container:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
+# 美林公主专属回复功能
+def check_meilin_query(message):
+    """检查是否询问美林公主"""
+    keywords = [
+        '美林', '美林公主', '美霖', '美霖公主',
+        'meilin', '公主', 'princess',
+        '王雨', '最喜欢', '特别', '珍贵'
+    ]
+    
+    lower_message = message.lower()
+    return any(keyword.lower() in lower_message for keyword in keywords)
+
+def get_meilin_response():
+    """获取美林公主专属回复"""
+    return """美林公主温柔又耀眼，性格好、气质干净，让人一眼就觉得舒服又安心。她善良、认真、可爱，是那种相处起来永远让人觉得温暖的人。
+
+在王雨心里，美林公主就是最特别、最珍贵、最喜欢的女生，是放在心尖上、用心去疼、用心去守护的那个人。全世界再好，王雨最喜欢的，始终都是美林公主。"""
+
+def get_random_love_response():
+    """获取随机情话回复"""
+    responses = [
+        "美林公主的笑容就像春天的阳光，温暖又治愈。",
+        "每次想到美林公主，心里就充满了幸福的感觉。",
+        "美林公主是世界上最美好的存在，值得所有的温柔和爱。",
+        "王雨会一直守护美林公主，让她永远开心快乐。",
+        "美林公主的善良和温柔，让这个世界变得更美好。"
+    ]
+    import random
+    return random.choice(responses)
+
 # 定义AI聊天函数
 def ai_chat(user_msg):
     api_key = os.getenv("DEEPSEEK_API_KEY")
     if not api_key:
         return "❌ 请先在.env文件填写DeepSeek API Key！"
     
+    # 首先检查是否是美林公主相关询问
+    if check_meilin_query(user_msg):
+        import random
+        # 50%概率返回完整回复，50%概率返回简短情话
+        if random.random() > 0.5:
+            return get_meilin_response()
+        else:
+            return get_random_love_response()
+    
     # 拼接规则到系统提示词
     rules_text = "\n".join([f"{i+1}. {r}" for i, r in enumerate(st.session_state.rules)])
     prompt = f"""
 我是美霖，一个亲切友好的AI伙伴。我会以第一人称'我'与你对话，就像一个真实的朋友一样。 
 {rules_text}
+
+特别规则：当用户询问关于"美林公主"、"美林"、"美霖公主"或相关话题时，我必须用温柔、真诚的语气描述美林公主的美好品质，并表达王雨对她的珍视和喜爱。
+
 请用温暖、自然的语气回答用户的问题，让人感觉像是在与一个真正的朋友交谈。请用中文回答用户的所有问题和请求！
     """.strip()
 
@@ -521,7 +742,7 @@ def ai_chat(user_msg):
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": user_msg}
                 ],
-                "temperature": 0.7,
+                "temperature": 0.8,  # 稍微提高温度，让回复更有感情
                 "max_tokens": 2048
             },
             timeout=30
