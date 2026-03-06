@@ -27,10 +27,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # 移动端默认收起侧边栏
 )
 
-# 添加PWA支持
+# 添加PWA支持 - 嵌入式配置
 st.markdown("""
-<!-- PWA配置 -->
-<link rel="manifest" href="/manifest.json">
+<!-- PWA配置 - 嵌入式manifest -->
+<link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E7%BE%8E%E9%9C%96%E4%B8%AA%E4%BA%BA%E5%8A%A9%E6%89%8B%22%2C%22short_name%22%3A%22%E7%BE%8E%E9%9C%96%E5%8A%A9%E6%89%8B%22%2C%22description%22%3A%22%E4%BD%A0%E7%9A%84%E4%B8%93%E5%B1%9EAI%E5%8A%A9%E6%89%8B%22%2C%22theme_color%22%3A%22%234A86E8%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22scope%22%3A%22%2F%22%2C%22start_url%22%3A%22%2F%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22%2Ficons%2Ficon-72x72.png%22%2C%22sizes%22%3A%2272x72%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22%2Ficons%2Ficon-96x96.png%22%2C%22sizes%22%3A%2296x96%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22%2Ficons%2Ficon-128x128.png%22%2C%22sizes%22%3A%22128x128%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22%2Ficons%2Ficon-144x144.png%22%2C%22sizes%22%3A%22144x144%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22%2Ficons%2Ficon-152x152.png%22%2C%22sizes%22%3A%22152x152%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22%2Ficons%2Ficon-192x192.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22%2Ficons%2Ficon-384x384.png%22%2C%22sizes%22%3A%22384x384%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22%2Ficons%2Ficon-512x512.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%2C%22categories%22%3A%5B%22lifestyle%22%2C%22productivity%22%5D%2C%22shortcuts%22%3A%5B%7B%22name%22%3A%22%E6%97%A5%E5%B8%B8%E6%83%85%E8%AF%9D%22%2C%22short_name%22%3A%22%E6%83%85%E8%AF%9D%22%2C%22description%22%3A%22%E6%9F%A5%E7%9C%8B%E4%BB%8A%E6%97%A5%E5%9C%9F%E5%91%B3%E6%83%85%E8%AF%9D%22%2C%22url%22%3A%22%2F%23love-saying%22%7D%2C%7B%22name%22%3A%22%E4%B8%8E%E7%BE%8E%E9%9C%96%E5%AF%B9%E8%AF%9D%22%2C%22short_name%22%3A%22%E5%AF%B9%E8%AF%9D%22%2C%22description%22%3A%22%E4%B8%8EAI%E5%8A%A9%E6%89%8B%E5%AF%B9%E8%AF%9D%22%2C%22url%22%3A%22%2F%23chat%22%7D%5D%7D">
 <meta name="theme-color" content="#4A86E8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -40,19 +40,117 @@ st.markdown("""
 <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
 <meta name="msapplication-TileColor" content="#4A86E8">
 
-<!-- 注册Service Worker -->
+<!-- 嵌入式Service Worker -->
 <script>
+// 内联Service Worker注册
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js')
+        // 创建内联Service Worker
+        const swCode = `
+            // Service Worker版本
+            const CACHE_NAME = 'meilin-assistant-v3.0';
+            const urlsToCache = [
+                '/',
+                '/icons/icon-72x72.png',
+                '/icons/icon-192x192.png',
+                '/icons/icon-512x512.png'
+            ];
+
+            // 安装事件
+            self.addEventListener('install', event => {
+                event.waitUntil(
+                    caches.open(CACHE_NAME)
+                        .then(cache => cache.addAll(urlsToCache))
+                        .then(() => self.skipWaiting())
+                );
+            });
+
+            // 激活事件
+            self.addEventListener('activate', event => {
+                event.waitUntil(
+                    caches.keys().then(cacheNames => {
+                        return Promise.all(
+                            cacheNames.map(cacheName => {
+                                if (cacheName !== CACHE_NAME) {
+                                    return caches.delete(cacheName);
+                                }
+                            })
+                        );
+                    }).then(() => self.clients.claim())
+                );
+            });
+
+            // 获取事件 - 网络优先，失败时使用缓存
+            self.addEventListener('fetch', event => {
+                event.respondWith(
+                    fetch(event.request)
+                        .then(response => {
+                            // 克隆响应以缓存
+                            const responseToCache = response.clone();
+                            caches.open(CACHE_NAME)
+                                .then(cache => cache.put(event.request, responseToCache));
+                            return response;
+                        })
+                        .catch(() => {
+                            return caches.match(event.request)
+                                .then(cachedResponse => {
+                                    if (cachedResponse) {
+                                        return cachedResponse;
+                                    }
+                                    // 返回离线页面
+                                    return new Response('网络连接已断开，请检查网络后重试。', {
+                                        status: 503,
+                                        statusText: 'Service Unavailable',
+                                        headers: new Headers({
+                                            'Content-Type': 'text/plain; charset=utf-8'
+                                        })
+                                    });
+                                });
+                        })
+                );
+            });
+        `;
+
+        // 创建Blob URL并注册Service Worker
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swURL = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swURL)
             .then(function(registration) {
                 console.log('Service Worker 注册成功:', registration.scope);
+                
+                // 检查更新
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('发现Service Worker更新:', newWorker.state);
+                });
             })
             .catch(function(error) {
                 console.log('Service Worker 注册失败:', error);
             });
     });
 }
+
+// PWA安装提示
+window.addEventListener('beforeinstallprompt', (e) => {
+    // 阻止默认安装提示
+    e.preventDefault();
+    // 保存事件供后续使用
+    window.deferredPrompt = e;
+    
+    // 显示自定义安装按钮（可选）
+    console.log('PWA安装可用');
+    
+    // 可以在这里添加自定义安装按钮
+    // showInstallPromotion();
+});
+
+// 检测是否已安装PWA
+window.addEventListener('appinstalled', (evt) => {
+    console.log('PWA已安装到主屏幕');
+    // 清除保存的安装提示
+    window.deferredPrompt = null;
+});
 </script>
 
 <style>
@@ -768,10 +866,74 @@ if user_input:
     # 使用rerun来更新聊天显示
     st.rerun()
 
+# 添加PWA状态显示
+st.markdown("""
+<div style="text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin: 20px 0;">
+    <h4 style="color: #4A86E8;">📱 PWA安装状态</h4>
+    <div id="pwa-status" style="margin: 10px 0;">
+        <p>正在检测PWA支持...</p>
+    </div>
+    <button id="install-button" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+        📲 安装到主屏幕
+    </button>
+</div>
+
+<script>
+// 检测PWA支持
+function checkPWAStatus() {
+    const statusDiv = document.getElementById('pwa-status');
+    const installButton = document.getElementById('install-button');
+    
+    // 检查是否支持Service Worker
+    if ('serviceWorker' in navigator) {
+        statusDiv.innerHTML = '<p style="color: green;">✅ Service Worker支持: 已启用</p>';
+        
+        // 检查是否已安装
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            statusDiv.innerHTML += '<p style="color: green;">✅ PWA状态: 已安装到主屏幕</p>';
+        } else {
+            statusDiv.innerHTML += '<p style="color: orange;">📱 PWA状态: 可安装到主屏幕</p>';
+            
+            // 显示安装按钮
+            if (window.deferredPrompt) {
+                installButton.style.display = 'inline-block';
+            }
+        }
+    } else {
+        statusDiv.innerHTML = '<p style="color: red;">❌ Service Worker支持: 不支持</p>';
+    }
+    
+    // 检查manifest
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+        statusDiv.innerHTML += '<p style="color: green;">✅ Manifest配置: 已加载</p>';
+    } else {
+        statusDiv.innerHTML += '<p style="color: red;">❌ Manifest配置: 未找到</p>';
+    }
+}
+
+// 安装按钮点击事件
+document.getElementById('install-button').addEventListener('click', async () => {
+    if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        const { outcome } = await window.deferredPrompt.userChoice;
+        console.log(`用户选择: ${outcome}`);
+        window.deferredPrompt = null;
+        document.getElementById('install-button').style.display = 'none';
+    }
+});
+
+// 页面加载完成后检查PWA状态
+window.addEventListener('load', () => {
+    setTimeout(checkPWAStatus, 1000);
+});
+</script>
+""", unsafe_allow_html=True)
+
 # 添加移动端友好的底部导航（放在提问框下面）
 st.markdown("""
 <div style="text-align: center; padding: 20px 0; color: #666;">
-    <p>🤖 美霖个人助手 v1.0 | 移动端优化版</p>
-    <p style="font-size: 0.9em;">点击左上角菜单图标展开侧边栏功能</p>
+    <p>🤖 美霖个人助手 v3.0 | PWA移动端优化版</p>
+    <p style="font-size: 0.9em;">支持安装到手机主屏幕，类似原生App体验</p>
 </div>
 """, unsafe_allow_html=True)
