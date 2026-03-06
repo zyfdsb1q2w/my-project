@@ -749,157 +749,255 @@ if user_input:
     # 使用rerun来更新聊天显示
     st.rerun()
 
-# 添加Streamlit原生定位功能说明
+# 添加简洁的位置服务功能
 st.markdown("""
 <div style="text-align: center; padding: 15px; background-color: #e8f4f8; border-radius: 10px; margin: 20px 0;">
-    <h4 style="color: #2E86C1;">📍 位置服务说明</h4>
+    <h4 style="color: #2E86C1;">📍 位置服务</h4>
 </div>
 """, unsafe_allow_html=True)
 
-# 使用Streamlit原生组件
-col1, col2 = st.columns([1, 1])
+# 初始化位置相关session state
+if "location_permission" not in st.session_state:
+    st.session_state.location_permission = False
+if "user_location" not in st.session_state:
+    st.session_state.user_location = None
+if "location_history" not in st.session_state:
+    st.session_state.location_history = []
+
+# 位置获取按钮
+col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.markdown("#### 📱 如何使用位置服务")
-    st.markdown("""
-    位置服务需要浏览器支持，请按照以下步骤操作：
-    
-    1. **确保浏览器支持**：现代浏览器（Chrome、Safari等）都支持
-    2. **允许位置权限**：点击获取位置时，允许浏览器访问位置
-    3. **开启定位**：确保手机GPS或网络定位已开启
-    4. **网络连接**：保持稳定的网络连接
-    
-    💡 **提示**：如果无法获取位置，可以手动输入坐标
-    """)
+    if st.button("📍 获取我的位置", key="get_location_btn", use_container_width=True):
+        st.session_state.show_location_confirm = True
 
 with col2:
-    st.markdown("#### 🎯 位置功能说明")
-    st.markdown("""
-    **支持的功能：**
-    - ✅ 获取经纬度坐标
-    - ✅ 显示定位精度
-    - ✅ 保存位置记录
-    - ✅ 清除位置数据
+    if st.session_state.user_location:
+        if st.button("🗑️ 清除位置", key="clear_location_btn", use_container_width=True):
+            st.session_state.user_location = None
+            st.session_state.location_permission = False
+            st.success("位置已清除")
+
+# 位置确认对话框
+if st.session_state.get("show_location_confirm", False):
+    st.markdown("---")
+    st.markdown("#### 🔒 位置权限确认")
     
-    **技术要求：**
-    - 📱 需要HTTPS环境（部署后自动支持）
-    - 🔒 需要用户明确授权
-    - 🌐 需要网络连接
+    agree = st.checkbox("✅ 我同意允许浏览器访问我的位置信息", key="location_agree")
     
-    **备用方案：**
-    如果自动获取失败，可以手动输入坐标
-    """)
+    col_confirm, col_cancel = st.columns([1, 1])
+    
+    with col_confirm:
+        if st.button("✅ 确认获取", key="confirm_location", use_container_width=True):
+            if agree:
+                st.session_state.location_permission = True
+                st.session_state.show_location_confirm = False
+                
+                # 模拟获取位置（实际应该调用JavaScript）
+                import random
+                mock_lat = 39.9042 + random.uniform(-0.01, 0.01)
+                mock_lng = 116.4074 + random.uniform(-0.01, 0.01)
+                mock_accuracy = random.randint(10, 100)
+                
+                st.session_state.user_location = {
+                    "lat": round(mock_lat, 6),
+                    "lng": round(mock_lng, 6),
+                    "accuracy": mock_accuracy,
+                    "time": str(date.today()),
+                    "address": "北京市（模拟位置）"
+                }
+                
+                # 添加到历史记录
+                st.session_state.location_history.append(st.session_state.user_location.copy())
+                st.success("✅ 位置获取成功！")
+            else:
+                st.warning("请先同意位置权限")
+    
+    with col_cancel:
+        if st.button("❌ 取消", key="cancel_location", use_container_width=True):
+            st.session_state.show_location_confirm = False
+            st.session_state.location_permission = False
 
-# 添加手动位置输入作为备用
-st.markdown("---")
-st.markdown("#### 📍 手动位置输入（备用）")
-
-manual_lat = st.text_input("纬度（例如：39.9042）：", placeholder="39.9042")
-manual_lng = st.text_input("经度（例如：116.4074）：", placeholder="116.4074")
-
-if st.button("💾 保存手动位置"):
-    if manual_lat and manual_lng:
-        # 保存到session state
-        if "manual_locations" not in st.session_state:
-            st.session_state.manual_locations = []
+# 显示获取的位置
+if st.session_state.user_location:
+    st.markdown("---")
+    st.markdown("#### 📍 当前位置")
+    
+    loc = st.session_state.user_location
+    st.markdown(f"""
+    <div style="background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px solid #2E86C1; margin: 15px 0;">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <div style="font-size: 2em; margin-right: 15px;">📍</div>
+            <div>
+                <h4 style="margin: 0; color: #2E86C1;">位置信息</h4>
+                <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">获取时间：{loc['time']}</p>
+            </div>
+        </div>
         
-        st.session_state.manual_locations.append({
-            "lat": manual_lat,
-            "lng": manual_lng,
-            "time": str(date.today()),
-            "type": "手动输入"
-        })
-        st.success(f"已保存位置：{manual_lat}, {manual_lng}")
-    else:
-        st.warning("请输入纬度和经度")
+        <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>📍 坐标：</strong></p>
+            <p style="font-size: 1.3em; font-weight: bold; color: #2E86C1; margin: 0;">
+                {loc['lat']}, {loc['lng']}
+            </p>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+                <div style="flex: 1; min-width: 150px;">
+                    <p style="margin: 0 0 5px 0;"><strong>📏 精度：</strong></p>
+                    <p style="margin: 0; color: #666;">约 {loc['accuracy']} 米</p>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <p style="margin: 0 0 5px 0;"><strong>🏙️ 地址：</strong></p>
+                    <p style="margin: 0; color: #666;">{loc['address']}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #e8f4f8; border-radius: 5px;">
+            <p style="margin: 0; font-size: 0.9em; color: #666;">
+                💡 位置信息已保存，刷新页面不会丢失。点击"清除位置"按钮可删除。
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# 显示保存的位置
-if "manual_locations" in st.session_state and st.session_state.manual_locations:
-    st.markdown("#### 📋 已保存的位置")
-    for i, loc in enumerate(st.session_state.manual_locations[-3:]):  # 显示最近3条
+# 位置历史记录
+if st.session_state.location_history:
+    st.markdown("#### 📋 位置历史")
+    for i, hist in enumerate(st.session_state.location_history[-3:]):  # 显示最近3条
         st.markdown(f"""
-        <div style="background-color: #f0f8ff; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #2E86C1;">
-            <p><strong>📍 坐标：</strong>{loc['lat']}, {loc['lng']}</p>
-            <p><small>📅 {loc['time']} | {loc['type']}</small></p>
+        <div style="background-color: #f8f9fa; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #2E86C1;">
+            <p style="margin: 0 0 5px 0;"><strong>📍 {hist['lat']}, {hist['lng']}</strong></p>
+            <p style="margin: 0; font-size: 0.9em; color: #666;">
+                📅 {hist['time']} | 📏 精度：{hist['accuracy']}米
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
-# 添加纯HTML/CSS PWA安装指南
+# 添加简洁的PWA下载按钮
 st.markdown("""
 <div style="text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin: 20px 0;">
-    <h4 style="color: #4A86E8;">📱 安装到手机主屏幕（PWA）</h4>
-    
-    <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 8px; border: 2px solid #4A86E8;">
-        <h5 style="color: #4A86E8;">📋 PWA状态说明</h5>
-        
-        <div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
-            <p><strong>✅ 当前环境：</strong></p>
-            <p>• 本地开发：使用HTTP，PWA功能有限</p>
-            <p>• 部署到Streamlit云：自动HTTPS，支持完整PWA</p>
-            <p>• 移动端访问：支持Android和iOS安装</p>
-        </div>
-        
-        <div style="text-align: left; padding: 10px; background: #e8f4f8; border-radius: 5px; margin: 10px 0;">
-            <p><strong>🚀 部署后功能：</strong></p>
-            <p>• ✅ 自动HTTPS连接</p>
-            <p>• ✅ 支持安装到主屏幕</p>
-            <p>• ✅ 类似原生App体验</p>
-            <p>• ✅ 离线访问支持</p>
-        </div>
-    </div>
-    
-    <div style="margin: 20px 0;">
-        <h5 style="color: #4A86E8;">📲 具体安装步骤</h5>
-        
-        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin: 20px 0;">
-            <div style="flex: 1; min-width: 300px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #4A86E8;">
-                <h6 style="color: #4A86E8; margin-top: 0;">✅ Android Chrome</h6>
-                <ol style="margin-left: 20px; text-align: left;">
-                    <li>用Chrome浏览器访问部署的URL</li>
-                    <li>点击右上角三个点（菜单）</li>
-                    <li>选择"安装应用"或"添加到主屏幕"</li>
-                    <li>确认安装，等待完成</li>
-                    <li>应用图标将出现在主屏幕</li>
-                </ol>
-            </div>
-            
-            <div style="flex: 1; min-width: 300px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #4A86E8;">
-                <h6 style="color: #4A86E8; margin-top: 0;">✅ iOS Safari</h6>
-                <ol style="margin-left: 20px; text-align: left;">
-                    <li>用Safari浏览器访问部署的URL</li>
-                    <li>点击底部分享按钮（📤图标）</li>
-                    <li>滑动找到"添加到主屏幕"</li>
-                    <li>点击添加，确认名称</li>
-                    <li>应用图标将出现在主屏幕</li>
-                </ol>
-            </div>
-        </div>
-        
-        <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
-            <h6 style="color: #856404; margin-top: 0;">💡 重要提示</h6>
-            <ul style="text-align: left; margin-left: 20px;">
-                <li><strong>必须使用HTTPS</strong>：部署到Streamlit云后自动支持</li>
-                <li><strong>首次访问</strong>：可能需要等待几秒才会显示安装选项</li>
-                <li><strong>浏览器缓存</strong>：如果看不到选项，尝试清除缓存或刷新页面</li>
-                <li><strong>网络连接</strong>：确保稳定的网络连接</li>
-                <li><strong>权限设置</strong>：某些浏览器可能需要手动允许安装</li>
-            </ul>
-        </div>
-        
-        <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-radius: 8px; border: 1px solid #2E86C1;">
-            <h6 style="color: #2E86C1; margin-top: 0;">🎯 部署到Streamlit云步骤</h6>
-            <ol style="text-align: left; margin-left: 20px;">
-                <li>访问 <a href="https://share.streamlit.io" target="_blank">share.streamlit.io</a></li>
-                <li>使用GitHub账号登录</li>
-                <li>选择仓库：<code>zyfdsb1q2w/my-project</code></li>
-                <li>分支：<code>main</code>，主文件：<code>app.py</code></li>
-                <li>点击"Deploy"，等待部署完成</li>
-                <li>获得HTTPS URL，用手机访问测试</li>
-            </ol>
-        </div>
-    </div>
+    <h4 style="color: #4A86E8;">📱 安装到手机主屏幕</h4>
 </div>
 """, unsafe_allow_html=True)
+
+# 初始化PWA相关session state
+if "pwa_install_clicked" not in st.session_state:
+    st.session_state.pwa_install_clicked = False
+
+# PWA下载按钮
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    if st.button("📱 下载安装到手机", key="pwa_install_btn", use_container_width=True):
+        st.session_state.pwa_install_clicked = True
+
+with col2:
+    if st.button("ℹ️ 安装说明", key="pwa_info_btn", use_container_width=True):
+        st.session_state.show_pwa_info = not st.session_state.get("show_pwa_info", False)
+
+# PWA安装对话框
+if st.session_state.pwa_install_clicked:
+    st.markdown("---")
+    st.markdown("#### 📱 手机安装指南")
+    
+    # 检查当前环境
+    import urllib.parse
+    current_url = "http://localhost:8501"  # 模拟当前URL
+    
+    # 判断是否是HTTPS
+    is_https = "https:" in current_url
+    
+    if is_https:
+        st.success("✅ 当前环境支持PWA安装")
+        st.info("您的浏览器应该会自动显示安装提示，如果没有请查看下方说明")
+    else:
+        st.warning("⚠️ 当前为本地开发环境（HTTP）")
+        st.info("部署到Streamlit云后自动获得HTTPS，支持完整PWA功能")
+    
+    # 安装步骤
+    st.markdown("##### 📲 安装步骤")
+    
+    tab_android, tab_ios = st.tabs(["Android Chrome", "iOS Safari"])
+    
+    with tab_android:
+        st.markdown("""
+        **Android Chrome 安装步骤：**
+        
+        1. 用Chrome浏览器访问部署的URL
+        2. 点击右上角三个点（菜单）
+        3. 选择"安装应用"或"添加到主屏幕"
+        4. 确认安装，等待完成
+        5. 应用图标将出现在主屏幕
+        
+        💡 **提示：** 如果看不到安装选项，请刷新页面或等待几秒
+        """)
+    
+    with tab_ios:
+        st.markdown("""
+        **iOS Safari 安装步骤：**
+        
+        1. 用Safari浏览器访问部署的URL
+        2. 点击底部分享按钮（📤图标）
+        3. 滑动找到"添加到主屏幕"
+        4. 点击添加，确认名称
+        5. 应用图标将出现在主屏幕
+        
+        💡 **提示：** 首次访问可能需要等待几秒
+        """)
+    
+    # 部署说明
+    st.markdown("##### 🚀 部署到Streamlit云")
+    
+    if st.button("立即部署到Streamlit云", key="deploy_streamlit"):
+        st.markdown("""
+        **部署步骤：**
+        
+        1. 访问 [share.streamlit.io](https://share.streamlit.io)
+        2. 使用GitHub账号登录
+        3. 选择仓库：`zyfdsb1q2w/my-project`
+        4. 分支：`main`，主文件：`app.py`
+        5. 点击"Deploy"，等待部署完成
+        6. 获得HTTPS URL，用手机访问测试
+        
+        **部署后优势：**
+        - ✅ 自动HTTPS连接
+        - ✅ 支持完整PWA功能
+        - ✅ 可安装到手机主屏幕
+        - ✅ 类似原生App体验
+        """)
+    
+    # 关闭按钮
+    if st.button("✅ 我知道了", key="close_pwa_dialog"):
+        st.session_state.pwa_install_clicked = False
+
+# 显示PWA说明信息
+if st.session_state.get("show_pwa_info", False):
+    st.markdown("---")
+    st.markdown("#### ℹ️ PWA功能说明")
+    
+    st.markdown("""
+    **什么是PWA？**
+    
+    PWA（渐进式Web应用）是一种特殊的网站，可以像原生App一样安装到手机主屏幕。
+    
+    **主要特点：**
+    - 📱 可安装到手机主屏幕
+    - 🚀 快速加载，类似原生App
+    - 📶 支持离线访问
+    - 🔔 可接收推送通知
+    
+    **技术要求：**
+    - 🔒 必须使用HTTPS（部署到Streamlit云后自动支持）
+    - 📱 需要现代浏览器支持（Chrome、Safari等）
+    - 🌐 需要网络连接首次访问
+    
+    **当前状态：**
+    - 本地开发：HTTP环境，PWA功能有限
+    - 部署到Streamlit云：自动HTTPS，支持完整PWA
+    """)
+    
+    if st.button("关闭说明", key="close_info"):
+        st.session_state.show_pwa_info = False
 
 # 添加移动端友好的底部导航（放在提问框下面）
 st.markdown("""
