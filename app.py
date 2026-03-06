@@ -774,8 +774,7 @@ with chat_container:
 def check_meilin_query(message):
     """检查是否询问美林公主"""
     keywords = [
-        '美林', '美林公主', '美霖', '美霖公主',
-        'meilin', '公主', 'princess',
+        '美林', '美林公主', '公主', 'princess',
         '王雨', '最喜欢', '特别', '珍贵'
     ]
     
@@ -821,7 +820,7 @@ def ai_chat(user_msg):
 我是美霖，一个亲切友好的AI伙伴。我会以第一人称'我'与你对话，就像一个真实的朋友一样。 
 {rules_text}
 
-特别规则：当用户询问关于"美林公主"、"美林"、"美霖公主"或相关话题时，我必须用温柔、真诚的语气描述美林公主的美好品质，并表达王雨对她的珍视和喜爱。
+特别规则：当用户询问关于"美林公主"、"美林"或相关话题时，我必须用温柔、真诚的语气描述美林公主的美好品质，并表达王雨对她的珍视和喜爱。
 
 请用温暖、自然的语气回答用户的问题，让人感觉像是在与一个真正的朋友交谈。请用中文回答用户的所有问题和请求！
     """.strip()
@@ -866,68 +865,174 @@ if user_input:
     # 使用rerun来更新聊天显示
     st.rerun()
 
-# 添加PWA状态显示
+# 添加定位功能
 st.markdown("""
-<div style="text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin: 20px 0;">
-    <h4 style="color: #4A86E8;">📱 PWA安装状态</h4>
-    <div id="pwa-status" style="margin: 10px 0;">
-        <p>正在检测PWA支持...</p>
+<div style="text-align: center; padding: 15px; background-color: #e8f4f8; border-radius: 10px; margin: 20px 0;">
+    <h4 style="color: #2E86C1;">📍 位置服务</h4>
+    <div id="location-status" style="margin: 10px 0;">
+        <p>位置服务未启用</p>
     </div>
-    <button id="install-button" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">
-        📲 安装到主屏幕
+    <button id="get-location-btn" style="background: linear-gradient(135deg, #2E86C1 0%, #1B4F72 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px;">
+        📍 获取我的位置
+    </button>
+    <button id="clear-location-btn" style="background: linear-gradient(135deg, #E74C3C 0%, #922B21 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; display: none;">
+        🗑️ 清除位置
     </button>
 </div>
 
 <script>
-// 检测PWA支持
-function checkPWAStatus() {
-    const statusDiv = document.getElementById('pwa-status');
-    const installButton = document.getElementById('install-button');
+// 位置服务状态
+let currentLocation = null;
+
+// 获取位置按钮点击事件
+document.getElementById('get-location-btn').addEventListener('click', () => {
+    const statusDiv = document.getElementById('location-status');
     
-    // 检查是否支持Service Worker
-    if ('serviceWorker' in navigator) {
-        statusDiv.innerHTML = '<p style="color: green;">✅ Service Worker支持: 已启用</p>';
-        
-        // 检查是否已安装
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            statusDiv.innerHTML += '<p style="color: green;">✅ PWA状态: 已安装到主屏幕</p>';
-        } else {
-            statusDiv.innerHTML += '<p style="color: orange;">📱 PWA状态: 可安装到主屏幕</p>';
+    if (!navigator.geolocation) {
+        statusDiv.innerHTML = '<p style="color: red;">❌ 浏览器不支持定位功能</p>';
+        return;
+    }
+    
+    statusDiv.innerHTML = '<p style="color: orange;">🔄 正在获取位置...</p>';
+    
+    navigator.geolocation.getCurrentPosition(
+        // 成功回调
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const timestamp = new Date(position.timestamp).toLocaleString();
             
-            // 显示安装按钮
-            if (window.deferredPrompt) {
-                installButton.style.display = 'inline-block';
+            currentLocation = {
+                latitude: lat,
+                longitude: lng,
+                accuracy: accuracy,
+                timestamp: timestamp
+            };
+            
+            // 保存到localStorage
+            localStorage.setItem('userLocation', JSON.stringify(currentLocation));
+            
+            // 更新显示
+            statusDiv.innerHTML = `
+                <p style="color: green;">✅ 位置获取成功！</p>
+                <div style="text-align: left; margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
+                    <p><strong>📍 坐标：</strong>${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                    <p><strong>📏 精度：</strong>${accuracy.toFixed(1)} 米</p>
+                    <p><strong>🕐 时间：</strong>${timestamp}</p>
+                </div>
+            `;
+            
+            // 显示清除按钮
+            document.getElementById('clear-location-btn').style.display = 'inline-block';
+            
+            // 尝试获取城市信息（逆地理编码）
+            getCityName(lat, lng);
+        },
+        // 错误回调
+        (error) => {
+            let errorMessage = '获取位置失败：';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += '用户拒绝了位置请求';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += '位置信息不可用';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += '请求超时';
+                    break;
+                default:
+                    errorMessage += '未知错误';
             }
+            statusDiv.innerHTML = `<p style="color: red;">❌ ${errorMessage}</p>`;
+        },
+        // 选项
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
         }
-    } else {
-        statusDiv.innerHTML = '<p style="color: red;">❌ Service Worker支持: 不支持</p>';
-    }
+    );
+});
+
+// 清除位置按钮点击事件
+document.getElementById('clear-location-btn').addEventListener('click', () => {
+    localStorage.removeItem('userLocation');
+    currentLocation = null;
+    document.getElementById('location-status').innerHTML = '<p>位置已清除</p>';
+    document.getElementById('clear-location-btn').style.display = 'none';
+});
+
+// 获取城市名称（逆地理编码）
+function getCityName(lat, lng) {
+    // 使用Nominatim（OpenStreetMap）进行逆地理编码
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`;
     
-    // 检查manifest
-    const manifestLink = document.querySelector('link[rel="manifest"]');
-    if (manifestLink) {
-        statusDiv.innerHTML += '<p style="color: green;">✅ Manifest配置: 已加载</p>';
-    } else {
-        statusDiv.innerHTML += '<p style="color: red;">❌ Manifest配置: 未找到</p>';
-    }
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.address) {
+                const city = data.address.city || data.address.town || data.address.village || data.address.county;
+                const country = data.address.country;
+                
+                if (city || country) {
+                    const locationInfo = document.createElement('p');
+                    locationInfo.innerHTML = `<strong>🏙️ 位置：</strong>${city ? city + ', ' : ''}${country || ''}`;
+                    document.getElementById('location-status').appendChild(locationInfo);
+                    
+                    // 保存城市信息
+                    if (currentLocation) {
+                        currentLocation.city = city;
+                        currentLocation.country = country;
+                        localStorage.setItem('userLocation', JSON.stringify(currentLocation));
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.log('逆地理编码失败:', error);
+        });
 }
 
-// 安装按钮点击事件
-document.getElementById('install-button').addEventListener('click', async () => {
-    if (window.deferredPrompt) {
-        window.deferredPrompt.prompt();
-        const { outcome } = await window.deferredPrompt.userChoice;
-        console.log(`用户选择: ${outcome}`);
-        window.deferredPrompt = null;
-        document.getElementById('install-button').style.display = 'none';
+// 页面加载时检查是否有保存的位置
+window.addEventListener('load', () => {
+    const savedLocation = localStorage.getItem('userLocation');
+    if (savedLocation) {
+        try {
+            currentLocation = JSON.parse(savedLocation);
+            const statusDiv = document.getElementById('location-status');
+            const loc = currentLocation;
+            
+            statusDiv.innerHTML = `
+                <p style="color: green;">✅ 已保存的位置</p>
+                <div style="text-align: left; margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
+                    <p><strong>📍 坐标：</strong>${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}</p>
+                    ${loc.city ? `<p><strong>🏙️ 位置：</strong>${loc.city}${loc.country ? ', ' + loc.country : ''}</p>` : ''}
+                    <p><strong>📏 精度：</strong>${loc.accuracy ? loc.accuracy.toFixed(1) + ' 米' : '未知'}</p>
+                    <p><strong>🕐 时间：</strong>${loc.timestamp || '未知'}</p>
+                </div>
+            `;
+            
+            document.getElementById('clear-location-btn').style.display = 'inline-block';
+        } catch (e) {
+            console.log('解析保存的位置失败:', e);
+        }
     }
 });
-
-// 页面加载完成后检查PWA状态
-window.addEventListener('load', () => {
-    setTimeout(checkPWAStatus, 1000);
-});
 </script>
+""", unsafe_allow_html=True)
+
+# 添加PWA安装指南（简化版）
+st.markdown("""
+<div style="text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin: 20px 0;">
+    <h4 style="color: #4A86E8;">📱 安装到手机主屏幕</h4>
+    <div style="margin: 10px 0;">
+        <p><strong>Android Chrome:</strong> 点击右上角菜单 → "安装应用"</p>
+        <p><strong>iOS Safari:</strong> 点击分享按钮 → "添加到主屏幕"</p>
+        <p style="font-size: 0.9em; color: #666;">💡 提示：确保使用HTTPS访问以获得最佳体验</p>
+    </div>
+</div>
 """, unsafe_allow_html=True)
 
 # 添加移动端友好的底部导航（放在提问框下面）
