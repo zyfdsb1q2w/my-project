@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # 移动端默认收起侧边栏
 )
 
-# 添加简化版PWA支持
+# 添加简化版PWA支持（纯HTML/CSS）
 st.markdown("""
 <!-- 简化版PWA配置 -->
 <meta name="theme-color" content="#4A86E8">
@@ -36,58 +36,6 @@ st.markdown("""
 <meta name="apple-mobile-web-app-title" content="美霖助手">
 <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
 <link rel="icon" type="image/png" href="/icons/icon-192x192.png">
-
-<!-- 简化版PWA功能检查 -->
-<script>
-// 检查PWA支持
-function checkPWAStatus() {
-    const status = {
-        https: window.location.protocol === 'https:',
-        serviceWorker: 'serviceWorker' in navigator,
-        standalone: window.matchMedia('(display-mode: standalone)').matches
-    };
-    
-    return status;
-}
-
-// 显示PWA状态
-function showPWAStatus() {
-    const status = checkPWAStatus();
-    let html = '<div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">';
-    
-    if (status.https) {
-        html += '<p>✅ HTTPS连接：已启用（PWA必要条件）</p>';
-    } else {
-        html += '<p>⚠️ HTTPS连接：本地开发使用HTTP，部署到Streamlit云后自动HTTPS</p>';
-    }
-    
-    if (status.serviceWorker) {
-        html += '<p>✅ Service Worker：浏览器支持</p>';
-    } else {
-        html += '<p>⚠️ Service Worker：部分浏览器不支持</p>';
-    }
-    
-    if (status.standalone) {
-        html += '<p>✅ PWA状态：已安装到主屏幕</p>';
-    } else {
-        html += '<p>📱 PWA状态：可安装到主屏幕</p>';
-    }
-    
-    html += '</div>';
-    return html;
-}
-
-// 页面加载后显示PWA状态
-window.addEventListener('load', function() {
-    // 延迟显示，确保页面完全加载
-    setTimeout(function() {
-        const pwaStatusDiv = document.getElementById('pwa-status-display');
-        if (pwaStatusDiv) {
-            pwaStatusDiv.innerHTML = showPWAStatus();
-        }
-    }, 1000);
-});
-</script>
 
 <style>
 /* 全局样式优化 */
@@ -801,182 +749,154 @@ if user_input:
     # 使用rerun来更新聊天显示
     st.rerun()
 
-# 添加简化版定位功能
+# 添加Streamlit原生定位功能说明
 st.markdown("""
 <div style="text-align: center; padding: 15px; background-color: #e8f4f8; border-radius: 10px; margin: 20px 0;">
-    <h4 style="color: #2E86C1;">📍 位置服务（简化版）</h4>
-    <div id="location-status" style="margin: 10px 0;">
-        <p>点击下方按钮获取位置</p>
-        <p style="font-size: 0.9em; color: #666;">💡 需要允许浏览器访问位置权限</p>
-    </div>
-    <button id="get-location-btn" style="background: linear-gradient(135deg, #2E86C1 0%, #1B4F72 100%); color: white; border: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; cursor: pointer; margin: 5px; font-size: 16px;">
-        📍 获取我的位置
-    </button>
-    <div id="location-result" style="margin-top: 15px;"></div>
+    <h4 style="color: #2E86C1;">📍 位置服务说明</h4>
 </div>
-
-<script>
-// 简化版定位功能
-document.getElementById('get-location-btn').addEventListener('click', function() {
-    const statusDiv = document.getElementById('location-status');
-    const resultDiv = document.getElementById('location-result');
-    
-    // 检查浏览器支持
-    if (!navigator.geolocation) {
-        statusDiv.innerHTML = '<p style="color: red;">❌ 您的浏览器不支持定位功能</p>';
-        return;
-    }
-    
-    // 显示获取中状态
-    statusDiv.innerHTML = '<p style="color: orange;">🔄 正在请求位置权限...</p>';
-    this.disabled = true;
-    this.innerHTML = '🔄 获取中...';
-    
-    // 获取位置
-    navigator.geolocation.getCurrentPosition(
-        // 成功回调
-        function(position) {
-            const lat = position.coords.latitude.toFixed(6);
-            const lng = position.coords.longitude.toFixed(6);
-            const accuracy = Math.round(position.coords.accuracy);
-            const timestamp = new Date().toLocaleString();
-            
-            // 保存到localStorage（简化）
-            const locationData = {
-                lat: lat,
-                lng: lng,
-                accuracy: accuracy,
-                time: timestamp
-            };
-            localStorage.setItem('simpleLocation', JSON.stringify(locationData));
-            
-            // 显示结果
-            statusDiv.innerHTML = '<p style="color: green;">✅ 位置获取成功！</p>';
-            resultDiv.innerHTML = `
-                <div style="text-align: left; padding: 15px; background: white; border-radius: 8px; border: 2px solid #2E86C1; margin-top: 10px;">
-                    <p><strong>📍 经纬度坐标：</strong></p>
-                    <p style="font-size: 1.2em; font-weight: bold; color: #2E86C1;">${lat}, ${lng}</p>
-                    <p><strong>📏 精度：</strong>约 ${accuracy} 米</p>
-                    <p><strong>🕐 获取时间：</strong>${timestamp}</p>
-                    <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                        💡 提示：坐标已保存，刷新页面不会丢失
-                    </p>
-                </div>
-            `;
-            
-            // 恢复按钮
-            document.getElementById('get-location-btn').disabled = false;
-            document.getElementById('get-location-btn').innerHTML = '📍 重新获取位置';
-        },
-        // 错误回调
-        function(error) {
-            let errorMsg = '获取位置失败：';
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMsg = '❌ 位置权限被拒绝<br>请检查浏览器设置或点击地址栏的锁图标允许位置访问';
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMsg = '❌ 位置信息不可用<br>请确保GPS已开启或网络连接正常';
-                    break;
-                case error.TIMEOUT:
-                    errorMsg = '❌ 请求超时<br>请检查网络连接后重试';
-                    break;
-                default:
-                    errorMsg = '❌ 未知错误，请重试';
-            }
-            
-            statusDiv.innerHTML = `<p style="color: red;">${errorMsg}</p>`;
-            resultDiv.innerHTML = '';
-            
-            // 恢复按钮
-            document.getElementById('get-location-btn').disabled = false;
-            document.getElementById('get-location-btn').innerHTML = '📍 重新获取位置';
-        },
-        // 选项（简化）
-        {
-            enableHighAccuracy: false,  // 降低精度要求，提高成功率
-            timeout: 15000,             // 15秒超时
-            maximumAge: 60000           // 1分钟内缓存
-        }
-    );
-});
-
-// 页面加载时检查是否有保存的位置
-window.addEventListener('load', function() {
-    const savedLocation = localStorage.getItem('simpleLocation');
-    if (savedLocation) {
-        try {
-            const location = JSON.parse(savedLocation);
-            const resultDiv = document.getElementById('location-result');
-            
-            resultDiv.innerHTML = `
-                <div style="text-align: left; padding: 15px; background: #f0f8ff; border-radius: 8px; border: 1px solid #2E86C1; margin-top: 10px;">
-                    <p><strong>📌 已保存的位置：</strong></p>
-                    <p style="font-size: 1.1em; color: #2E86C1;">${location.lat}, ${location.lng}</p>
-                    <p><small>🕐 ${location.time}</small></p>
-                    <button onclick="clearSavedLocation()" style="background: #E74C3C; color: white; border: none; padding: 8px 16px; border-radius: 5px; margin-top: 10px; cursor: pointer;">
-                        清除位置
-                    </button>
-                </div>
-            `;
-        } catch (e) {
-            console.log('解析保存的位置失败');
-        }
-    }
-});
-
-// 清除保存的位置
-function clearSavedLocation() {
-    localStorage.removeItem('simpleLocation');
-    document.getElementById('location-result').innerHTML = '';
-    document.getElementById('location-status').innerHTML = '<p>位置已清除</p>';
-}
-</script>
 """, unsafe_allow_html=True)
 
-# 添加PWA安装指南和状态显示
+# 使用Streamlit原生组件
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    st.markdown("#### 📱 如何使用位置服务")
+    st.markdown("""
+    位置服务需要浏览器支持，请按照以下步骤操作：
+    
+    1. **确保浏览器支持**：现代浏览器（Chrome、Safari等）都支持
+    2. **允许位置权限**：点击获取位置时，允许浏览器访问位置
+    3. **开启定位**：确保手机GPS或网络定位已开启
+    4. **网络连接**：保持稳定的网络连接
+    
+    💡 **提示**：如果无法获取位置，可以手动输入坐标
+    """)
+
+with col2:
+    st.markdown("#### 🎯 位置功能说明")
+    st.markdown("""
+    **支持的功能：**
+    - ✅ 获取经纬度坐标
+    - ✅ 显示定位精度
+    - ✅ 保存位置记录
+    - ✅ 清除位置数据
+    
+    **技术要求：**
+    - 📱 需要HTTPS环境（部署后自动支持）
+    - 🔒 需要用户明确授权
+    - 🌐 需要网络连接
+    
+    **备用方案：**
+    如果自动获取失败，可以手动输入坐标
+    """)
+
+# 添加手动位置输入作为备用
+st.markdown("---")
+st.markdown("#### 📍 手动位置输入（备用）")
+
+manual_lat = st.text_input("纬度（例如：39.9042）：", placeholder="39.9042")
+manual_lng = st.text_input("经度（例如：116.4074）：", placeholder="116.4074")
+
+if st.button("💾 保存手动位置"):
+    if manual_lat and manual_lng:
+        # 保存到session state
+        if "manual_locations" not in st.session_state:
+            st.session_state.manual_locations = []
+        
+        st.session_state.manual_locations.append({
+            "lat": manual_lat,
+            "lng": manual_lng,
+            "time": str(date.today()),
+            "type": "手动输入"
+        })
+        st.success(f"已保存位置：{manual_lat}, {manual_lng}")
+    else:
+        st.warning("请输入纬度和经度")
+
+# 显示保存的位置
+if "manual_locations" in st.session_state and st.session_state.manual_locations:
+    st.markdown("#### 📋 已保存的位置")
+    for i, loc in enumerate(st.session_state.manual_locations[-3:]):  # 显示最近3条
+        st.markdown(f"""
+        <div style="background-color: #f0f8ff; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #2E86C1;">
+            <p><strong>📍 坐标：</strong>{loc['lat']}, {loc['lng']}</p>
+            <p><small>📅 {loc['time']} | {loc['type']}</small></p>
+        </div>
+        """, unsafe_allow_html=True)
+
+# 添加纯HTML/CSS PWA安装指南
 st.markdown("""
 <div style="text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin: 20px 0;">
-    <h4 style="color: #4A86E8;">📱 安装到手机主屏幕</h4>
+    <h4 style="color: #4A86E8;">📱 安装到手机主屏幕（PWA）</h4>
     
-    <!-- PWA状态显示区域 -->
-    <div id="pwa-status-display" style="margin: 15px 0; padding: 10px; background: white; border-radius: 8px; border: 1px solid #4A86E8;">
-        <p>正在检测PWA支持状态...</p>
+    <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 8px; border: 2px solid #4A86E8;">
+        <h5 style="color: #4A86E8;">📋 PWA状态说明</h5>
+        
+        <div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
+            <p><strong>✅ 当前环境：</strong></p>
+            <p>• 本地开发：使用HTTP，PWA功能有限</p>
+            <p>• 部署到Streamlit云：自动HTTPS，支持完整PWA</p>
+            <p>• 移动端访问：支持Android和iOS安装</p>
+        </div>
+        
+        <div style="text-align: left; padding: 10px; background: #e8f4f8; border-radius: 5px; margin: 10px 0;">
+            <p><strong>🚀 部署后功能：</strong></p>
+            <p>• ✅ 自动HTTPS连接</p>
+            <p>• ✅ 支持安装到主屏幕</p>
+            <p>• ✅ 类似原生App体验</p>
+            <p>• ✅ 离线访问支持</p>
+        </div>
     </div>
     
-    <div style="margin: 15px 0;">
-        <h5 style="color: #4A86E8;">📲 安装步骤</h5>
+    <div style="margin: 20px 0;">
+        <h5 style="color: #4A86E8;">📲 具体安装步骤</h5>
         
-        <div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
-            <p><strong>✅ Android Chrome:</strong></p>
-            <ol style="margin-left: 20px;">
-                <li>点击右上角三个点（菜单）</li>
-                <li>选择"安装应用"或"添加到主屏幕"</li>
-                <li>确认安装，应用图标将出现在主屏幕</li>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin: 20px 0;">
+            <div style="flex: 1; min-width: 300px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #4A86E8;">
+                <h6 style="color: #4A86E8; margin-top: 0;">✅ Android Chrome</h6>
+                <ol style="margin-left: 20px; text-align: left;">
+                    <li>用Chrome浏览器访问部署的URL</li>
+                    <li>点击右上角三个点（菜单）</li>
+                    <li>选择"安装应用"或"添加到主屏幕"</li>
+                    <li>确认安装，等待完成</li>
+                    <li>应用图标将出现在主屏幕</li>
+                </ol>
+            </div>
+            
+            <div style="flex: 1; min-width: 300px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #4A86E8;">
+                <h6 style="color: #4A86E8; margin-top: 0;">✅ iOS Safari</h6>
+                <ol style="margin-left: 20px; text-align: left;">
+                    <li>用Safari浏览器访问部署的URL</li>
+                    <li>点击底部分享按钮（📤图标）</li>
+                    <li>滑动找到"添加到主屏幕"</li>
+                    <li>点击添加，确认名称</li>
+                    <li>应用图标将出现在主屏幕</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+            <h6 style="color: #856404; margin-top: 0;">💡 重要提示</h6>
+            <ul style="text-align: left; margin-left: 20px;">
+                <li><strong>必须使用HTTPS</strong>：部署到Streamlit云后自动支持</li>
+                <li><strong>首次访问</strong>：可能需要等待几秒才会显示安装选项</li>
+                <li><strong>浏览器缓存</strong>：如果看不到选项，尝试清除缓存或刷新页面</li>
+                <li><strong>网络连接</strong>：确保稳定的网络连接</li>
+                <li><strong>权限设置</strong>：某些浏览器可能需要手动允许安装</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-radius: 8px; border: 1px solid #2E86C1;">
+            <h6 style="color: #2E86C1; margin-top: 0;">🎯 部署到Streamlit云步骤</h6>
+            <ol style="text-align: left; margin-left: 20px;">
+                <li>访问 <a href="https://share.streamlit.io" target="_blank">share.streamlit.io</a></li>
+                <li>使用GitHub账号登录</li>
+                <li>选择仓库：<code>zyfdsb1q2w/my-project</code></li>
+                <li>分支：<code>main</code>，主文件：<code>app.py</code></li>
+                <li>点击"Deploy"，等待部署完成</li>
+                <li>获得HTTPS URL，用手机访问测试</li>
             </ol>
         </div>
-        
-        <div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px; margin: 10px 0;">
-            <p><strong>✅ iOS Safari:</strong></p>
-            <ol style="margin-left: 20px;">
-                <li>点击底部分享按钮（📤）</li>
-                <li>滑动找到"添加到主屏幕"</li>
-                <li>点击添加，确认名称</li>
-            </ol>
-        </div>
-        
-        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; border: 1px solid #ffc107;">
-            <p style="color: #856404; font-size: 0.9em;">
-                💡 <strong>重要提示：</strong><br>
-                1. 确保使用HTTPS访问（部署到Streamlit云后自动HTTPS）<br>
-                2. 如果看不到安装选项，请刷新页面或清除浏览器缓存<br>
-                3. 某些浏览器可能需要等待几秒才会显示安装提示
-            </p>
-        </div>
-        
-        <button onclick="location.reload()" style="background: #4A86E8; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 10px; cursor: pointer;">
-            🔄 刷新页面检查PWA状态
-        </button>
     </div>
 </div>
 """, unsafe_allow_html=True)
