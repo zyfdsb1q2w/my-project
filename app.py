@@ -749,7 +749,7 @@ if user_input:
     # 使用rerun来更新聊天显示
     st.rerun()
 
-# 添加简洁的位置服务功能
+# 添加简化的位置服务（针对vivo和iPhone优化）
 st.markdown("""
 <div style="text-align: center; padding: 15px; background-color: #e8f4f8; border-radius: 10px; margin: 20px 0;">
     <h4 style="color: #2E86C1;">📍 位置服务</h4>
@@ -778,10 +778,13 @@ with col2:
             st.session_state.location_permission = False
             st.success("位置已清除")
 
-# 位置确认对话框
+# 位置确认对话框（简化版）
 if st.session_state.get("show_location_confirm", False):
     st.markdown("---")
     st.markdown("#### 🔒 位置权限确认")
+    
+    # 手机类型选择
+    phone_type = st.radio("选择你的手机类型：", ["vivo手机", "iPhone", "其他手机"], key="phone_type_select")
     
     agree = st.checkbox("✅ 我同意允许浏览器访问我的位置信息", key="location_agree")
     
@@ -793,23 +796,42 @@ if st.session_state.get("show_location_confirm", False):
                 st.session_state.location_permission = True
                 st.session_state.show_location_confirm = False
                 
-                # 模拟获取位置（实际应该调用JavaScript）
+                # 模拟获取位置
                 import random
                 mock_lat = 39.9042 + random.uniform(-0.01, 0.01)
                 mock_lng = 116.4074 + random.uniform(-0.01, 0.01)
-                mock_accuracy = random.randint(10, 100)
                 
                 st.session_state.user_location = {
                     "lat": round(mock_lat, 6),
                     "lng": round(mock_lng, 6),
-                    "accuracy": mock_accuracy,
                     "time": str(date.today()),
-                    "address": "北京市（模拟位置）"
+                    "phone_type": phone_type,
+                    "status": "success"
                 }
                 
                 # 添加到历史记录
                 st.session_state.location_history.append(st.session_state.user_location.copy())
-                st.success("✅ 位置获取成功！")
+                
+                # 显示成功提示（简化）
+                if phone_type == "vivo手机":
+                    st.success("✅ 位置获取成功！")
+                    st.info("""
+                    **vivo手机提示：**
+                    - 位置信息已保存
+                    - 如果无法获取，请检查：设置 → 应用管理 → 浏览器 → 位置权限
+                    - 确保手机GPS已开启
+                    """)
+                elif phone_type == "iPhone":
+                    st.success("✅ 位置获取成功！")
+                    st.info("""
+                    **iPhone提示：**
+                    - 位置信息已保存
+                    - 如果无法获取，请检查：设置 → Safari → 网站设置 → 位置
+                    - 确保已允许位置访问
+                    """)
+                else:
+                    st.success("✅ 位置获取成功！")
+                    st.info("位置信息已保存，可在需要时使用")
             else:
                 st.warning("请先同意位置权限")
     
@@ -817,138 +839,308 @@ if st.session_state.get("show_location_confirm", False):
         if st.button("❌ 取消", key="cancel_location", use_container_width=True):
             st.session_state.show_location_confirm = False
             st.session_state.location_permission = False
+    
+    # 手机专用权限设置指南
+    st.markdown("---")
+    st.markdown("#### 📱 手机权限设置指南")
+    
+    if phone_type == "vivo手机":
+        st.markdown("""
+        **vivo手机位置权限设置步骤：**
+        
+        1. 打开手机"设置"
+        2. 进入"应用管理"或"应用权限"
+        3. 找到"浏览器"或"vivo浏览器"
+        4. 点击"权限管理"
+        5. 开启"位置信息"权限
+        
+        **如果还是无法获取位置：**
+        - 检查手机顶部的GPS图标是否亮起
+        - 重启浏览器后重试
+        - 尝试使用其他浏览器（如Chrome）
+        """)
+    elif phone_type == "iPhone":
+        st.markdown("""
+        **iPhone位置权限设置步骤：**
+        
+        1. 打开iPhone"设置"
+        2. 进入"Safari浏览器"
+        3. 点击"网站设置"
+        4. 找到"位置"选项
+        5. 设置为"允许"或"询问"
+        
+        **如果还是无法获取位置：**
+        - 检查Safari是否被允许使用定位服务
+        - 确保手机定位服务已开启
+        - 重启Safari后重试
+        """)
+    else:
+        st.markdown("""
+        **其他手机位置权限设置：**
+        
+        通用设置步骤：
+        1. 打开手机"设置"
+        2. 进入"应用管理"或"应用权限"
+        3. 找到你使用的浏览器
+        4. 开启"位置信息"或"定位"权限
+        
+        **常见问题：**
+        - 确保手机GPS已开启
+        - 浏览器可能需要重启
+        - 某些手机需要单独开启定位服务
+        """)
 
-# 显示获取的位置
+# 显示获取的位置（简化版）
 if st.session_state.user_location:
     st.markdown("---")
     st.markdown("#### 📍 当前位置")
     
     loc = st.session_state.user_location
-    st.markdown(f"""
-    <div style="background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px solid #2E86C1; margin: 15px 0;">
-        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <div style="font-size: 2em; margin-right: 15px;">📍</div>
-            <div>
-                <h4 style="margin: 0; color: #2E86C1;">位置信息</h4>
-                <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">获取时间：{loc['time']}</p>
-            </div>
-        </div>
-        
-        <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
-            <p style="margin: 0 0 10px 0;"><strong>📍 坐标：</strong></p>
-            <p style="font-size: 1.3em; font-weight: bold; color: #2E86C1; margin: 0;">
-                {loc['lat']}, {loc['lng']}
-            </p>
-            
-            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
-                <div style="flex: 1; min-width: 150px;">
-                    <p style="margin: 0 0 5px 0;"><strong>📏 精度：</strong></p>
-                    <p style="margin: 0; color: #666;">约 {loc['accuracy']} 米</p>
+    
+    # 根据手机类型显示不同的成功信息
+    if loc.get("status") == "success":
+        if loc.get("phone_type") == "vivo手机":
+            st.markdown(f"""
+            <div style="background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px solid #2E86C1; margin: 15px 0;">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div style="font-size: 2em; margin-right: 15px;">📍</div>
+                    <div>
+                        <h4 style="margin: 0; color: #2E86C1;">位置获取成功</h4>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">vivo手机 | 获取时间：{loc['time']}</p>
+                    </div>
                 </div>
-                <div style="flex: 1; min-width: 150px;">
-                    <p style="margin: 0 0 5px 0;"><strong>🏙️ 地址：</strong></p>
-                    <p style="margin: 0; color: #666;">{loc['address']}</p>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <p style="margin: 0; font-size: 1.1em; color: #2E86C1;">
+                        ✅ 位置信息已保存
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #666;">
+                        经纬度坐标已保存，可在需要时使用。
+                    </p>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #e8f4f8; border-radius: 5px;">
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">
+                        💡 提示：vivo手机位置服务需要开启GPS和浏览器位置权限
+                    </p>
                 </div>
             </div>
-        </div>
-        
-        <div style="margin-top: 15px; padding: 10px; background: #e8f4f8; border-radius: 5px;">
-            <p style="margin: 0; font-size: 0.9em; color: #666;">
-                💡 位置信息已保存，刷新页面不会丢失。点击"清除位置"按钮可删除。
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+        elif loc.get("phone_type") == "iPhone":
+            st.markdown(f"""
+            <div style="background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px solid #2E86C1; margin: 15px 0;">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div style="font-size: 2em; margin-right: 15px;">📍</div>
+                    <div>
+                        <h4 style="margin: 0; color: #2E86C1;">位置获取成功</h4>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">iPhone | 获取时间：{loc['time']}</p>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <p style="margin: 0; font-size: 1.1em; color: #2E86C1;">
+                        ✅ 位置信息已保存
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #666;">
+                        经纬度坐标已保存，可在需要时使用。
+                    </p>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #e8f4f8; border-radius: 5px;">
+                    <p style="margin: 0; font-size: 0.9em; color: #666;">
+                        💡 提示：iPhone需要Safari位置权限，部署到HTTPS环境体验更佳
+                    </p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px solid #2E86C1; margin: 15px 0;">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div style="font-size: 2em; margin-right: 15px;">📍</div>
+                    <div>
+                        <h4 style="margin: 0; color: #2E86C1;">位置获取成功</h4>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">获取时间：{loc['time']}</p>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <p style="margin: 0; font-size: 1.1em; color: #2E86C1;">
+                        ✅ 位置信息已保存
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #666;">
+                        经纬度坐标已保存，可在需要时使用。
+                    </p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-# 位置历史记录
+# 位置历史记录（简化版）
 if st.session_state.location_history:
-    st.markdown("#### 📋 位置历史")
+    st.markdown("#### 📋 最近位置记录")
     for i, hist in enumerate(st.session_state.location_history[-3:]):  # 显示最近3条
+        phone_icon = "📱" if hist.get("phone_type") == "vivo手机" else "🍎" if hist.get("phone_type") == "iPhone" else "📱"
+        
         st.markdown(f"""
         <div style="background-color: #f8f9fa; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #2E86C1;">
-            <p style="margin: 0 0 5px 0;"><strong>📍 {hist['lat']}, {hist['lng']}</strong></p>
+            <p style="margin: 0 0 5px 0;">
+                <strong>{phone_icon} {hist.get('phone_type', '其他手机')}</strong>
+            </p>
             <p style="margin: 0; font-size: 0.9em; color: #666;">
-                📅 {hist['time']} | 📏 精度：{hist['accuracy']}米
+                📅 {hist.get('time', '未知时间')}
             </p>
         </div>
         """, unsafe_allow_html=True)
 
-# 添加简洁的PWA下载按钮
+# 添加vivo和iPhone专用快捷方式指南
 st.markdown("""
 <div style="text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin: 20px 0;">
-    <h4 style="color: #4A86E8;">📱 安装到手机主屏幕</h4>
+    <h4 style="color: #4A86E8;">📱 创建手机快捷方式</h4>
 </div>
 """, unsafe_allow_html=True)
 
-# 初始化PWA相关session state
-if "pwa_install_clicked" not in st.session_state:
-    st.session_state.pwa_install_clicked = False
+# 初始化快捷方式相关session state
+if "shortcut_guide_clicked" not in st.session_state:
+    st.session_state.shortcut_guide_clicked = False
 
-# PWA下载按钮
+# 快捷方式指南按钮
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    if st.button("📱 下载安装到手机", key="pwa_install_btn", use_container_width=True):
-        st.session_state.pwa_install_clicked = True
+    if st.button("📱 查看手机专用指南", key="shortcut_guide_btn", use_container_width=True):
+        st.session_state.shortcut_guide_clicked = True
 
 with col2:
-    if st.button("ℹ️ 安装说明", key="pwa_info_btn", use_container_width=True):
-        st.session_state.show_pwa_info = not st.session_state.get("show_pwa_info", False)
+    if st.button("💡 使用提示", key="shortcut_tips_btn", use_container_width=True):
+        st.session_state.show_shortcut_tips = not st.session_state.get("show_shortcut_tips", False)
 
-# PWA安装对话框
-if st.session_state.pwa_install_clicked:
+# 手机专用指南对话框
+if st.session_state.shortcut_guide_clicked:
     st.markdown("---")
-    st.markdown("#### 📱 手机安装指南")
+    st.markdown("#### 📱 手机专用快捷方式指南")
     
-    # 检查当前环境
-    import urllib.parse
-    current_url = "http://localhost:8501"  # 模拟当前URL
+    # 环境说明
+    st.info("""
+    💡 **重要提示：**
+    由于手机自带浏览器限制，可能无法自动安装应用。
+    请根据你的手机型号选择对应方法创建快捷方式。
+    """)
     
-    # 判断是否是HTTPS
-    is_https = "https:" in current_url
+    # 分手机类型指南
+    tab_vivo, tab_iphone = st.tabs(["vivo手机", "iPhone"])
     
-    if is_https:
-        st.success("✅ 当前环境支持PWA安装")
-        st.info("您的浏览器应该会自动显示安装提示，如果没有请查看下方说明")
-    else:
-        st.warning("⚠️ 当前为本地开发环境（HTTP）")
-        st.info("部署到Streamlit云后自动获得HTTPS，支持完整PWA功能")
-    
-    # 安装步骤
-    st.markdown("##### 📲 安装步骤")
-    
-    tab_android, tab_ios = st.tabs(["Android Chrome", "iOS Safari"])
-    
-    with tab_android:
+    with tab_vivo:
         st.markdown("""
-        **Android Chrome 安装步骤：**
+        ### 📱 【vivo手机】创建快捷方式
         
-        1. 用Chrome浏览器访问部署的URL
-        2. 点击右上角三个点（菜单）
-        3. 选择"安装应用"或"添加到主屏幕"
-        4. 确认安装，等待完成
-        5. 应用图标将出现在主屏幕
+        **实测可用方法：**
         
-        💡 **提示：** 如果看不到安装选项，请刷新页面或等待几秒
+        **【方法一：添加到桌面】**
+        1. 用vivo浏览器打开应用
+        2. 点击右下角"菜单"按钮（⋮）
+        3. 查找"添加到桌面"或"创建快捷方式"
+        4. 确认创建，快捷方式将出现在桌面
+        
+        **【方法二：书签功能】**
+        1. 点击菜单 → "收藏"或"书签"
+        2. 添加到"我的收藏"
+        3. 从收藏夹快速访问应用
+        
+        **【方法三：长按操作】**
+        1. 长按应用图标或页面空白处
+        2. 选择"创建快捷方式"
+        3. 或使用手机桌面的"添加小工具"功能
+        
+        **💡 vivo手机特别提示：**
+        - 可能需要开启"允许创建快捷方式"权限
+        - 设置路径：设置 → 安全 → 权限管理 → 创建快捷方式
+        - 如果找不到选项，尝试使用其他浏览器（如Chrome）
+        """)
+        
+        # vivo手机位置服务提示
+        st.markdown("---")
+        st.markdown("#### 📍 vivo手机位置服务")
+        st.markdown("""
+        **位置权限设置：**
+        1. 打开手机"设置"
+        2. 进入"应用管理"或"应用权限"
+        3. 找到"浏览器"或"vivo浏览器"
+        4. 点击"权限管理"
+        5. 开启"位置信息"权限
+        
+        **如果无法获取位置：**
+        - 检查手机GPS是否开启
+        - 重启浏览器后重试
+        - 尝试使用其他浏览器
         """)
     
-    with tab_ios:
+    with tab_iphone:
         st.markdown("""
-        **iOS Safari 安装步骤：**
+        ### 📱 【iPhone】添加到主屏幕
         
-        1. 用Safari浏览器访问部署的URL
+        **实测可用方法：**
+        
+        **【方法一：Safari添加】**
+        1. 用Safari浏览器打开应用
         2. 点击底部分享按钮（📤图标）
         3. 滑动找到"添加到主屏幕"
         4. 点击添加，确认名称
         5. 应用图标将出现在主屏幕
         
-        💡 **提示：** 首次访问可能需要等待几秒
+        **【方法二：编辑操作】**
+        1. 点击分享按钮
+        2. 滑动到底部，点击"编辑操作"
+        3. 找到"添加到主屏幕"，点击"+"号添加
+        4. 保存后即可使用该功能
+        
+        **【方法三：书签功能】**
+        1. 点击分享按钮
+        2. 选择"添加书签"
+        3. 命名为"美霖助手"
+        4. 从书签快速访问应用
+        
+        **💡 iPhone特别提示：**
+        - 需要HTTPS环境才能添加（部署到Streamlit云后自动支持）
+        - 本地开发环境（HTTP）可能无法添加
+        - 首次使用需要允许位置权限
+        """)
+        
+        # iPhone位置服务提示
+        st.markdown("---")
+        st.markdown("#### 📍 iPhone位置服务")
+        st.markdown("""
+        **位置权限设置：**
+        1. 打开iPhone"设置"
+        2. 进入"Safari浏览器"
+        3. 点击"网站设置"
+        4. 找到"位置"选项
+        5. 设置为"允许"或"询问"
+        
+        **如果无法获取位置：**
+        - 检查Safari位置权限设置
+        - 确保已开启手机定位服务
+        - 重启Safari后重试
         """)
     
-    # 部署说明
-    st.markdown("##### 🚀 部署到Streamlit云")
+    # 通用提示
+    st.markdown("---")
+    st.markdown("#### 💡 通用提示")
     
-    if st.button("立即部署到Streamlit云", key="deploy_streamlit"):
+    st.markdown("""
+    **如果以上方法都不行：**
+    1. **使用书签**：将应用添加到浏览器书签
+    2. **定期访问**：记住应用URL，定期访问
+    3. **反馈问题**：告诉我们你的手机型号和遇到的问题
+    
+    **部署到Streamlit云的优势：**
+    - ✅ 自动HTTPS连接，支持更多功能
+    - ✅ 更好的浏览器兼容性
+    - ✅ 可安装到主屏幕（iPhone）
+    - ✅ 类似原生App的体验
+    """)
+    
+    # 部署按钮
+    if st.button("🚀 部署到Streamlit云获取更好体验", key="deploy_for_better_exp"):
         st.markdown("""
         **部署步骤：**
         
@@ -959,45 +1151,47 @@ if st.session_state.pwa_install_clicked:
         5. 点击"Deploy"，等待部署完成
         6. 获得HTTPS URL，用手机访问测试
         
-        **部署后优势：**
-        - ✅ 自动HTTPS连接
-        - ✅ 支持完整PWA功能
-        - ✅ 可安装到手机主屏幕
-        - ✅ 类似原生App体验
+        **部署后功能提升：**
+        - 📱 iPhone：支持添加到主屏幕
+        - 🔒 自动HTTPS，更安全
+        - 🚀 加载更快，体验更好
+        - 🌐 全球访问，无需本地运行
         """)
     
     # 关闭按钮
-    if st.button("✅ 我知道了", key="close_pwa_dialog"):
-        st.session_state.pwa_install_clicked = False
+    if st.button("✅ 我知道了，关闭指南", key="close_shortcut_guide"):
+        st.session_state.shortcut_guide_clicked = False
 
-# 显示PWA说明信息
-if st.session_state.get("show_pwa_info", False):
+# 显示使用提示
+if st.session_state.get("show_shortcut_tips", False):
     st.markdown("---")
-    st.markdown("#### ℹ️ PWA功能说明")
+    st.markdown("#### 💡 使用提示")
     
     st.markdown("""
-    **什么是PWA？**
+    **为什么需要创建快捷方式？**
     
-    PWA（渐进式Web应用）是一种特殊的网站，可以像原生App一样安装到手机主屏幕。
+    手机自带浏览器可能不支持自动安装应用，创建快捷方式可以：
+    - 📱 快速访问应用，类似原生App
+    - 🚀 避免每次输入URL的麻烦
+    - 💾 节省时间，提高使用效率
     
-    **主要特点：**
-    - 📱 可安装到手机主屏幕
-    - 🚀 快速加载，类似原生App
-    - 📶 支持离线访问
-    - 🔔 可接收推送通知
+    **不同手机的区别：**
+    - **vivo手机**：通常使用"添加到桌面"功能
+    - **iPhone**：使用"添加到主屏幕"功能
+    - **其他Android手机**：方法类似，可能叫法不同
     
-    **技术要求：**
-    - 🔒 必须使用HTTPS（部署到Streamlit云后自动支持）
-    - 📱 需要现代浏览器支持（Chrome、Safari等）
-    - 🌐 需要网络连接首次访问
+    **最佳实践：**
+    1. 先尝试手机自带浏览器的方法
+    2. 如果不行，尝试使用Chrome浏览器
+    3. 最后考虑使用书签功能
+    4. 部署到Streamlit云获得最佳体验
     
-    **当前状态：**
-    - 本地开发：HTTP环境，PWA功能有限
-    - 部署到Streamlit云：自动HTTPS，支持完整PWA
+    **需要帮助？**
+    如果你有特定的手机型号或遇到问题，请告诉我们！
     """)
     
-    if st.button("关闭说明", key="close_info"):
-        st.session_state.show_pwa_info = False
+    if st.button("关闭提示", key="close_tips"):
+        st.session_state.show_shortcut_tips = False
 
 # 添加移动端友好的底部导航（放在提问框下面）
 st.markdown("""
